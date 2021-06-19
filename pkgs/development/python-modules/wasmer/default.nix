@@ -1,7 +1,9 @@
 { lib
+, stdenv
 , rustPlatform
 , fetchFromGitHub
 , buildPythonPackage
+, libiconv
 }:
 let
   pname = "wasmer";
@@ -26,6 +28,8 @@ in buildPythonPackage rec {
 
   nativeBuildInputs = with rustPlatform; [ cargoSetupHook maturinBuildHook ];
 
+  buildInputs = lib.optionals stdenv.isDarwin [ libiconv ];
+
   buildAndTestSubdir = "packages/api";
 
   doCheck = false;
@@ -36,7 +40,7 @@ in buildPythonPackage rec {
     description = "Python extension to run WebAssembly binaries";
     homepage = "https://github.com/wasmerio/wasmer-python";
     license = licenses.mit;
-    platforms = platforms.linux;
+    platforms = platforms.unix;
     maintainers = with maintainers; [ SuperSandro2000 ];
   };
 }

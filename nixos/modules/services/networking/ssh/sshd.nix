@@ -41,6 +41,10 @@ let
           Warning: If you are using <literal>NixOps</literal> then don't use this
           option since it will replace the key required for deployment via ssh.
         '';
+        example = [
+          "ssh-rsa AAAAB3NzaC1yc2etc/etc/etcjwrsh8e596z6J0l7 example@host"
+          "ssh-ed25519 AAAAC3NzaCetcetera/etceteraJZMfk3QPfQ foo@bar"
+        ];
       };
 
       keyFiles = mkOption {
@@ -119,6 +123,15 @@ in
           Whether to enable the SFTP subsystem in the SSH daemon.  This
           enables the use of commands such as <command>sftp</command> and
           <command>sshfs</command>.
+        '';
+      };
+
+      sftpServerExecutable = mkOption {
+        type = types.str;
+        example = "internal-sftp";
+        description = ''
+          The sftp server executable.  Can be a path or "internal-sftp" to use
+          the sftp server built into the sshd binary.
         '';
       };
 
@@ -243,7 +256,17 @@ in
       authorizedKeysFiles = mkOption {
         type = types.listOf types.str;
         default = [];
-        description = "Files from which authorized keys are read.";
+        description = ''
+          Specify the rules for which files to read on the host.
+
+          This is an advanced option. If you're looking to configure user
+          keys, you can generally use <xref linkend="opt-users.users._name_.openssh.authorizedKeys.keys"/>
+          or <xref linkend="opt-users.users._name_.openssh.authorizedKeys.keyFiles"/>.
+
+          These are paths relative to the host root file system or home
+          directories and they are subject to certain token expansion rules.
+          See AuthorizedKeysFile in man sshd_config for details.
+        '';
       };
 
       authorizedKeysCommand = mkOption {
@@ -386,6 +409,7 @@ in
       };
 
     services.openssh.moduliFile = mkDefault "${cfgc.package}/etc/ssh/moduli";
+    services.openssh.sftpServerExecutable = mkDefault "${cfgc.package}/libexec/sftp-server";
 
     environment.etc = authKeysFiles //
       { "ssh/moduli".source = cfg.moduliFile;
@@ -505,7 +529,7 @@ in
         ''}
 
         ${optionalString cfg.allowSFTP ''
-          Subsystem sftp ${cfgc.package}/libexec/sftp-server ${concatStringsSep " " cfg.sftpFlags}
+          Subsystem sftp ${cfg.sftpServerExecutable} ${concatStringsSep " " cfg.sftpFlags}
         ''}
 
         PermitRootLogin ${cfg.permitRootLogin}

@@ -1,24 +1,32 @@
-{ lib, fetchFromGitHub, buildGoModule }:
+{ lib
+, fetchFromGitHub
+, buildGoModule
+, testVersion
+, seaweedfs
+}:
 
 buildGoModule rec {
   pname = "seaweedfs";
-  version = "2.34";
+  version = "2.50";
 
   src = fetchFromGitHub {
     owner = "chrislusf";
     repo = "seaweedfs";
     rev = version;
-    sha256 = "sha256-YQL9xx4dpT1psZqLiF5ojQcEY2EI0szWTS4oOPbG7Co=";
+    sha256 = "sha256-ai8/XryFw/7GYuWAmLkqHzK97QgTBPyE6m3dflck94w=";
   };
 
-  vendorSha256 = "sha256-8o/Y5SXMgDrid1a5KTQieiVrWce0wcgrhPbSsbravEI=";
+  vendorSha256 = "sha256-gJQDcACMWZWS4CgS2NDALoBzxu7Hh4ZW3f0gUFUALCM=";
 
   subPackages = [ "weed" ];
+
+  passthru.tests.version =
+    testVersion { package = seaweedfs; command = "weed version"; };
 
   meta = with lib; {
     description = "Simple and highly scalable distributed file system";
     homepage = "https://github.com/chrislusf/seaweedfs";
-    maintainers = [ maintainers.raboof ];
+    maintainers = with maintainers; [ cmacrae raboof ];
     license = licenses.asl20;
   };
 }

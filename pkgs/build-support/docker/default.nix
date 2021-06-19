@@ -7,6 +7,7 @@
   coreutils,
   docker,
   e2fsprogs,
+  fakeroot,
   findutils,
   go,
   jq,
@@ -35,6 +36,10 @@
 }:
 
 let
+
+  inherit (lib)
+    optionals
+    ;
 
   mkDbExtraCommand = contents: let
     contentsList = if builtins.isList contents then contents else [ contents ];
@@ -85,6 +90,8 @@ rec {
     , finalImageName ? imageName
       # This used to set a tag to the pulled image
     , finalImageTag ? "latest"
+      # This is used to disable TLS certificate verification, allowing access to http registries on (hopefully) trusted networks
+    , tlsVerify ? true
 
     , name ? fixName "docker-image-${finalImageName}-${finalImageTag}.tar"
     }:
@@ -104,7 +111,13 @@ rec {
       sourceURL = "docker://${imageName}@${imageDigest}";
       destNameTag = "${finalImageName}:${finalImageTag}";
     } ''
-      skopeo --insecure-policy --tmpdir=$TMPDIR --override-os ${os} --override-arch ${arch} copy "$sourceURL" "docker-archive://$out:$destNameTag"
+      skopeo \
+        --src-tls-verify=${lib.boolToString tlsVerify} \
+        --insecure-policy \
+        --tmpdir=$TMPDIR \
+        --override-os ${os} \
+        --override-arch ${arch} \
+        copy "$sourceURL" "docker-archive://$out:$destNameTag"
     '';
 
   # We need to sum layer.tar, not a directory, hence tarsum instead of nix-hash.
@@ -417,7 +430,11 @@ rec {
         # details on what's going on here; basically this command
         # means that the runAsRootScript will be executed in a nearly
         # completely isolated environment.
-        unshare -imnpuf --mount-proc chroot mnt ${runAsRootScript}
+        #
+        # Ideally we would use --mount-proc=mnt/proc or similar, but this
+        # doesn't work. The workaround is to setup proc after unshare.
+        # See: https://github.com/karelzak/util-linux/issues/648
+        unshare -imnpuf --mount-proc sh -c 'mount --rbind /proc mnt/proc && chroot mnt ${runAsRootScript}'
 
         # Unmount directories and remove them.
         umount -R mnt/dev mnt/sys mnt${storeDir}
@@ -527,7 +544,7 @@ rec {
         passthru.layer = layer;
         passthru.imageTag =
           if tag != null
-            then lib.toLower tag
+            then tag
             else
               lib.head (lib.strings.splitString "-" (baseNameOf result.outPath));
         # Docker can't be made to run darwin binaries
@@ -681,6 +698,42 @@ rec {
     in
     result;
 
+  # Merge the tarballs of images built with buildImage into a single
+  # tarball that contains all images. Running `docker load` on the resulting
+  # tarball will load the images into the docker daemon.
+  mergeImages = images: runCommand "merge-docker-images"
+    {
+      inherit images;
+      nativeBuildInputs = [ pigz jq ];
+    } ''
+    mkdir image inputs
+    # Extract images
+    repos=()
+    manifests=()
+    for item in $images; do
+      name=$(basename $item)
+      mkdir inputs/$name
+      tar -I pigz -xf $item -C inputs/$name
+      if [ -f inputs/$name/repositories ]; then
+        repos+=(inputs/$name/repositories)
+      fi
+      if [ -f inputs/$name/manifest.json ]; then
+        manifests+=(inputs/$name/manifest.json)
+      fi
+    done
+    # Copy all layers from input images to output image directory
+    cp -R --no-clobber inputs/*/* image/
+    # Merge repositories objects and manifests
+    jq -s add "''${repos[@]}" > repositories
+    jq -s add "''${manifests[@]}" > manifest.json
+    # Replace output image repositories and manifest with merged versions
+    mv repositories image/repositories
+    mv manifest.json image/manifest.json
+    # Create tarball and gzip
+    tar -C image --hard-dereference --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --xform s:'^./':: -c . | pigz -nT > $out
+  '';
+
+
   # Provide a /etc/passwd and /etc/group that contain root and nobody.
   # Useful when packaging binaries that insist on using nss to look up
   # username/groups (like nginx).
@@ -740,9 +793,16 @@ rec {
     created ? "1970-01-01T00:00:01Z",
     # Optional bash script to run on the files prior to fixturizing the layer.
     extraCommands ? "",
+    # Optional bash script to run inside fakeroot environment.
+    # Could be used for changing ownership of files in customisation layer.
+    fakeRootCommands ? "",
     # We pick 100 to ensure there is plenty of room for extension. I
     # believe the actual maximum is 128.
-    maxLayers ? 100
+    maxLayers ? 100,
+    # Whether to include store paths in the image. You generally want to leave
+    # this on, but tooling may disable this to insert the store paths more
+    # efficiently via other means, such as bind mounting the host store.
+    includeStorePaths ? true,
   }:
     assert
       (lib.assertMsg (maxLayers > 1)
@@ -765,19 +825,24 @@ rec {
       customisationLayer = symlinkJoin {
         name = "${baseName}-customisation-layer";
         paths = contentsList;
-        inherit extraCommands;
+        inherit extraCommands fakeRootCommands;
+        nativeBuildInputs = [ fakeroot ];
         postBuild = ''
           mv $out old_out
           (cd old_out; eval "$extraCommands" )
 
           mkdir $out
 
-          tar \
-            --sort name \
-            --owner 0 --group 0 --mtime "@$SOURCE_DATE_EPOCH" \
-            --hard-dereference \
-            -C old_out \
-            -cf $out/layer.tar .
+          fakeroot bash -c '
+            source $stdenv/setup
+            cd old_out
+            eval "$fakeRootCommands"
+            tar \
+              --sort name \
+              --numeric-owner --mtime "@$SOURCE_DATE_EPOCH" \
+              --hard-dereference \
+              -cf $out/layer.tar .
+          '
 
           sha256sum $out/layer.tar \
             | cut -f 1 -d ' ' \
@@ -785,7 +850,9 @@ rec {
         '';
       };
 
-      closureRoots = [ baseJson ] ++ contentsList;
+      closureRoots = optionals includeStorePaths /* normally true */ (
+        [ baseJson ] ++ contentsList
+      );
       overallClosure = writeText "closure" (lib.concatStringsSep " " closureRoots);
 
       # These derivations are only created as implementation details of docker-tools,

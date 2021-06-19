@@ -4,7 +4,7 @@
 , undmg
 , makeWrapper
 , nodePackages
-, alsaLib
+, alsa-lib
 , at-spi2-atk
 , at-spi2-core
 , atk
@@ -26,6 +26,7 @@
 , libuuid
 , libxcb
 , libxkbcommon
+, libxshmfence
 , mesa
 , nspr
 , nss
@@ -41,11 +42,11 @@ let
 
   pname = "slack";
 
-  x86_64-darwin-version = "4.13.0";
-  x86_64-darwin-sha256 = "1f155fgbdmqxy7324lxj3ysx1p332rzpwy06iac90rm6irf5v57f";
+  x86_64-darwin-version = "4.17.0";
+  x86_64-darwin-sha256 = "0r5cafxw73qnn14ljprn7w8bfn67zbkcniq60k9pf2zbqgb4cyj9";
 
-  x86_64-linux-version = "4.13.0";
-  x86_64-linux-sha256 = "1hqvynkhbkfwxvfgjqv91x5k7qlzayjr5mmf8rz0ncp4j4d3x9mq";
+  x86_64-linux-version = "4.17.0";
+  x86_64-linux-sha256 = "07ccms58pq27ilkyhcf6cgwb7qrddwil5kgy8yv95ljikqzi5rxi";
 
   version = {
     x86_64-darwin = x86_64-darwin-version;
@@ -79,7 +80,7 @@ let
     passthru.updateScript = ./update.sh;
 
     rpath = lib.makeLibraryPath [
-      alsaLib
+      alsa-lib
       at-spi2-atk
       at-spi2-core
       atk
@@ -117,6 +118,7 @@ let
       xorg.libXi
       xorg.libXrandr
       xorg.libXrender
+      xorg.libxshmfence
       xorg.libXtst
       xorg.libxkbfile
     ] + ":${stdenv.cc.cc.lib}/lib64";
