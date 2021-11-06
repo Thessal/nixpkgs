@@ -1,9 +1,42 @@
-{ mkDerivation, lib, fetchFromGitHub, cmake, ninja, flex, bison, proj, geos
-, xlibsWrapper, sqlite, gsl, qwt, fcgi, python3Packages, libspatialindex
-, libspatialite, postgresql, txt2tags, openssl, libzip, hdf5, netcdf, exiv2
-, protobuf, qtbase, qtsensors, qca-qt5, qtkeychain, qscintilla, qtserialport
-, qtxmlpatterns, withGrass ? true, grass, withWebKit ? true, qtwebkit }:
-with lib;
+{ lib
+, mkDerivation
+, fetchFromGitHub
+, fetchpatch
+, cmake
+, ninja
+, flex
+, bison
+, proj
+, geos
+, xlibsWrapper
+, sqlite
+, gsl
+, qwt
+, fcgi
+, python3Packages
+, libspatialindex
+, libspatialite
+, postgresql
+, txt2tags
+, openssl
+, libzip
+, hdf5
+, netcdf
+, exiv2
+, protobuf
+, qtbase
+, qtsensors
+, qca-qt5
+, qtkeychain
+, qscintilla
+, qtserialport
+, qtxmlpatterns
+, withGrass ? true
+, grass
+, withWebKit ? true
+, qtwebkit
+}:
+
 let
   pythonBuildInputs = with python3Packages; [
     qscintilla-qt5
@@ -12,7 +45,7 @@ let
     numpy
     psycopg2
     chardet
-    dateutil
+    python-dateutil
     pyyaml
     pytz
     requests
@@ -24,16 +57,22 @@ let
     six
   ];
 in mkDerivation rec {
-  version = "3.16.7";
-  pname = "qgis";
-  name = "${pname}-unwrapped-${version}";
+  version = "3.16.10";
+  pname = "qgis-unwrapped";
 
   src = fetchFromGitHub {
     owner = "qgis";
     repo = "QGIS";
     rev = "final-${lib.replaceStrings [ "." ] [ "_" ] version}";
-    sha256 = "0yvb2w83dplh0my72xljglq9a4a7qkfliwslav26lw4yqxr8mr0p";
+    sha256 = "sha256-/lsfyTDlkZNIVHg5qgZW7qfOyTC2+1r3ZbsnQmEdy30=";
   };
+
+  patches = [
+    (fetchpatch {
+      url = "https://github.com/qgis/QGIS/commit/fc1ac8bef8dcc3194857ecd32519aca4867b4fa1.patch";
+      sha256 = "106smg3drx8c7yxzfhd1c7xrq757l5cfxx8lklihyvr4a7wc9gpy";
+    })
+  ];
 
   passthru = {
     inherit pythonBuildInputs;
@@ -77,12 +116,12 @@ in mkDerivation rec {
   # build to use PYQT5_SIP_DIR consistently.
   postPatch = ''
     substituteInPlace cmake/FindPyQt5.py \
-      --replace 'sip_dir = cfg.default_sip_dir' 'sip_dir = "${python3Packages.pyqt5}/share/sip/PyQt5"'
+      --replace 'sip_dir = cfg.default_sip_dir' 'sip_dir = "${python3Packages.pyqt5}/${python3Packages.python.sitePackages}/PyQt5/bindings"'
   '';
 
   cmakeFlags = [
     "-DCMAKE_SKIP_BUILD_RPATH=OFF"
-    "-DPYQT5_SIP_DIR=${python3Packages.pyqt5}/share/sip/PyQt5"
+    "-DPYQT5_SIP_DIR=${python3Packages.pyqt5}/${python3Packages.python.sitePackages}/PyQt5/bindings"
     "-DQSCI_SIP_DIR=${python3Packages.qscintilla-qt5}/share/sip/PyQt5"
   ] ++ lib.optional (!withWebKit) "-DWITH_QTWEBKIT=OFF"
     ++ lib.optional withGrass "-DGRASS_PREFIX7=${grass}/${grass.name}";

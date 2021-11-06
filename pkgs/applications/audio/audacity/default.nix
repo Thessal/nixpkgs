@@ -62,6 +62,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "audacity";
+  # nixpkgs-update: no auto update
+  # Humans too! Let's wait to see how the situation with
+  # https://github.com/audacity/audacity/issues/1213 develops before
+  # pulling any updates that are subject to this privacy policy. We
+  # may wish to switch to a fork, but at the time of writing
+  # (2021-07-05) it's too early to tell how well any of the forks will
+  # be maintained.
   version = "3.0.2";
 
   src = fetchFromGitHub {
@@ -73,7 +80,7 @@ stdenv.mkDerivation rec {
 
   patches = [
     (fetchpatch {
-      url = "https://github.com/audacity/audacity/pull/831/commits/007852e51fcbb5f1f359d112f28b8984a604dac6.patch";
+      url = "https://github.com/audacity/audacity/commit/7f8135e112a0e1e8e906abab9339680d1e491441.patch";
       sha256 = "0zp2iydd46analda9cfnbmzdkjphz5m7dynrdj5qdnmq6j3px9fw";
       name = "audacity_xdg_paths.patch";
     })

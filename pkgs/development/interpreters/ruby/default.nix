@@ -12,7 +12,7 @@ let
   opString = lib.optionalString;
   patchSet = import ./rvm-patchsets.nix { inherit fetchFromGitHub; };
   config = import ./config.nix { inherit fetchFromSavannah; };
-  rubygems = import ./rubygems { inherit stdenv lib fetchurl fetchpatch; };
+  rubygems = import ./rubygems { inherit stdenv lib fetchurl; };
 
   # Contains the ruby version heuristics
   rubyVersion = import ./ruby-version.nix { inherit lib; };
@@ -26,7 +26,6 @@ let
   generic = { version, sha256 }: let
     ver = version;
     tag = ver.gitTag;
-    atLeast27 = lib.versionAtLeast ver.majMin "2.7";
     atLeast30 = lib.versionAtLeast ver.majMin "3.0";
     baseruby = self.override {
       useRailsExpress = false;
@@ -105,7 +104,7 @@ let
             inherit patchSet useRailsExpress ops fetchpatch;
             patchLevel = ver.patchLevel;
           }).${ver.majMinTiny}
-          ++ op atLeast27 ./do-not-regenerate-revision.h.patch
+          ++ [ ./do-not-regenerate-revision.h.patch ]
           ++ op (atLeast30 && useRailsExpress) ./do-not-update-gems-baseruby.patch
           # Ruby prior to 3.0 has a bug the installer (tools/rbinstall.rb) but
           # the resulting error was swallowed. Newer rubygems no longer swallows
@@ -252,27 +251,19 @@ let
     ) args; in self;
 
 in {
-  ruby_2_6 = generic {
-    version = rubyVersion "2" "6" "7" "";
-    sha256 = {
-      src = "17m9qxalwhk95dw1qhgxbvr3kkcxs3h86yirfg5mwj35gy5pw8p4";
-      git = "08gvknanwdfsaj3lmcv1bdqjf9lldphzi7gmlv3cfa8ligx2vbap";
-    };
-  };
-
   ruby_2_7 = generic {
-    version = rubyVersion "2" "7" "3" "";
+    version = rubyVersion "2" "7" "4" "";
     sha256 = {
-      src = "0f2kwn98n9h9hy1fd547s7d0a7ga8jjm4nh294bwiwnq65gaj9c9";
-      git = "0vxg9w4dgpw2ig5snxmkahvzdp2yh71w8qm49g35d5hqdsql7yrx";
+      src = "0nxwkxh7snmjqf787qsp4i33mxd1rbf9yzyfiky5k230i680jhrh";
+      git = "1prsrqwkla4k5japlm54k0j700j4824rg8z8kpswr9r3swrmrf5p";
     };
   };
 
   ruby_3_0 = generic {
-    version = rubyVersion "3" "0" "1" "";
+    version = rubyVersion "3" "0" "2" "";
     sha256 = {
-      src = "09vpnxxcxc46qv40xbxr9xkdpbgb0imdy25l2vpsxxlr47djb61n";
-      git = "0vricyhnnczcbsgvz65pdhi9yx1i34zarbjlc5y5mcmj01y9r7ar";
+      src = "1wg6yyzc6arzikcy48igqbxfcdc79bmfpiyfi9m9j1lzmphdx1ah";
+      git = "1kbkxqichi11vli080jgyvjf2xgnlbl9l2f2n1hv4s8b31gjib3r";
     };
   };
 }

@@ -3,7 +3,7 @@
 , isPy27
 , fetchFromGitHub
 , pytestCheckHook
-, pytestcov
+, pytest-cov
 , hyppo
 , matplotlib
 , networkx
@@ -36,12 +36,12 @@ buildPythonPackage rec {
     seaborn
   ];
 
-  checkInputs = [ pytestCheckHook pytestcov ];
+  checkInputs = [ pytestCheckHook pytest-cov ];
   pytestFlagsArray = [ "tests" "--ignore=docs" "--ignore=tests/test_sklearn.py" ];
   disabledTests = [ "gridplot_outputs" ];
 
   meta = with lib; {
-    homepage = "https://graspy.neurodata.io";
+    homepage = "https://graspologic.readthedocs.io";
     description = "A package for graph statistical algorithms";
     license = licenses.asl20;  # changing to `licenses.mit` in next release
     maintainers = with maintainers; [ bcdarwin ];

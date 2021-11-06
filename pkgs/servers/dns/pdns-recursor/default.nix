@@ -5,11 +5,11 @@
 
 stdenv.mkDerivation rec {
   pname = "pdns-recursor";
-  version = "4.5.2";
+  version = "4.5.6";
 
   src = fetchurl {
     url = "https://downloads.powerdns.com/releases/pdns-recursor-${version}.tar.bz2";
-    sha256 = "1101izvyknxqhzz987j3acsa221ymgrnmyciaz8v7jziai9ksa5i";
+    sha256 = "004jwyg64ww6sfwlfpyfvh6vymildygwkjhkin2fsrq4h79wv2dv";
   };
 
   nativeBuildInputs = [ pkg-config ];

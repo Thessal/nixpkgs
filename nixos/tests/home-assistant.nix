@@ -12,19 +12,18 @@ in {
     environment.systemPackages = with pkgs; [ mosquitto ];
     services.mosquitto = {
       enable = true;
-      checkPasswords = true;
-      users = {
-        "${mqttUsername}" = {
-          acl = [ "topic readwrite #" ];
-          password = mqttPassword;
+      listeners = [ {
+        users = {
+          "${mqttUsername}" = {
+            acl = [ "readwrite #" ];
+            password = mqttPassword;
+          };
         };
-      };
+      } ];
     };
     services.home-assistant = {
       inherit configDir;
       enable = true;
-      # includes the package with all tests enabled
-      package = pkgs.home-assistant;
       config = {
         homeassistant = {
           name = "Home";

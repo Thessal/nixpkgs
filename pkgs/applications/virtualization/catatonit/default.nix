@@ -1,23 +1,15 @@
-{ lib, stdenv, fetchFromGitHub, fetchpatch, autoreconfHook, glibc, nixosTests }:
+{ lib, stdenv, fetchFromGitHub, autoreconfHook, glibc, nixosTests }:
 
 stdenv.mkDerivation rec {
   pname = "catatonit";
-  version = "0.1.5";
+  version = "0.1.7";
 
   src = fetchFromGitHub {
     owner = "openSUSE";
     repo = pname;
     rev = "v${version}";
-    sha256 = "ciJ1MI7jr5P2PgxIykQ+BiwNUO8lQHGt0+U8CNbc5bI=";
+    sha256 = "sha256-jX4fYC/rpfd3ro2UZ6OEu4kU5wpusOwmEVPWEjxwlW4=";
   };
-
-  patches = [
-    # Fix compilation with musl
-    (fetchpatch {
-      url = "https://github.com/openSUSE/catatonit/commit/75014b1c3099245b7d0f44f24d7f6dc4888a45fd.patch";
-      sha256 = "sha256-9VMNUT1U90ocjvE7EXYfLxuodDwTXXHYg89qqa5Jq0g=";
-    })
-  ];
 
   nativeBuildInputs = [ autoreconfHook ];
   buildInputs = lib.optionals (!stdenv.hostPlatform.isMusl) [ glibc glibc.static ];

@@ -15,18 +15,18 @@
 , pyopenssl
 , pyyaml
 , requests
-, requests_toolbelt
+, requests-toolbelt
 , terminaltables
 , websocket-client
 }:
 
 buildPythonPackage rec {
   pname = "gradient";
-  version = "1.4.3";
+  version = "1.8.9";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "a8fa91669c97440049132119019e90d0a9cf09e96352cf43c7c6ca244894bd4e";
+    sha256 = "c05913efe7fcc9f75c1fe84c157d2c2cf3ec0983e132d418c6e59fabc6361a1e";
   };
 
   postPatch = ''
@@ -53,7 +53,7 @@ buildPythonPackage rec {
     pyopenssl
     pyyaml
     requests
-    requests_toolbelt
+    requests-toolbelt
     terminaltables
     websocket-client
   ];
@@ -67,5 +67,8 @@ buildPythonPackage rec {
     license = licenses.isc;
     platforms = platforms.unix;
     maintainers = with maintainers; [ thoughtpolice ];
+    # There is no support for click > 8
+    # https://github.com/Paperspace/gradient-cli/issues/368
+    broken = true;
   };
 }

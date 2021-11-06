@@ -33,6 +33,8 @@ let
       inherit sha256;
     };
 
+    hardeningEnable = lib.optionals (!stdenv.cc.isClang) [ "pie" ];
+
     outputs = [ "out" "lib" "doc" "man" ];
     setOutputFlags = false; # $out retains configureFlags :-/
 
@@ -196,18 +198,18 @@ let
 in self: {
 
   postgresql_9_6 = self.callPackage generic {
-    version = "9.6.21";
+    version = "9.6.23";
     psqlSchema = "9.6";
-    sha256 = "0d0ngpadf1i7c0i2psaxcbmiwx8334ibcsn283n9fp4853pyl3wk";
+    sha256 = "1fa735lrmv2vrfiixg73nh024gxlagcbrssklvgwdf0s82cgfjd8";
     this = self.postgresql_9_6;
     thisAttr = "postgresql_9_6";
     inherit self;
   };
 
   postgresql_10 = self.callPackage generic {
-    version = "10.16";
+    version = "10.18";
     psqlSchema = "10.0"; # should be 10, but changing it is invasive
-    sha256 = "1cvv8qw0gkkczqhiwx6ns7w88dwkvdz4cvb2d4ff14363f5p2p53";
+    sha256 = "009qpb02bq0rx0aaw5ck70gk07xwparhfxvlfimgihw2vhp7qisp";
     this = self.postgresql_10;
     thisAttr = "postgresql_10";
     inherit self;
@@ -215,36 +217,36 @@ in self: {
   };
 
   postgresql_11 = self.callPackage generic {
-    version = "11.11";
+    version = "11.13";
     psqlSchema = "11.1"; # should be 11, but changing it is invasive
-    sha256 = "0v0qk298nxmpzpgsxcsxma328hdkyzd7fwjs0zsn6zavl5zpnq20";
+    sha256 = "0j5wnscnxa3sx8d39s55654df8aikmvkihfb0a02hrgmyygnihx0";
     this = self.postgresql_11;
     thisAttr = "postgresql_11";
     inherit self;
   };
 
   postgresql_12 = self.callPackage generic {
-    version = "12.6";
+    version = "12.8";
     psqlSchema = "12";
-    sha256 = "028asz92mi3706zabfs8w9z03mzyx62d1l71qy9zdwfabj6xjzfz";
+    sha256 = "0an6v5bsp26d276wbdx76lsq6cq86hgi2fmkzwawnk63j3h02r72";
     this = self.postgresql_12;
     thisAttr = "postgresql_12";
     inherit self;
   };
 
   postgresql_13 = self.callPackage generic {
-    version = "13.2";
+    version = "13.4";
     psqlSchema = "13";
-    sha256 = "1z5d847jnajcfr3wa6jn52a8xjhamvwzmz18xlm5nvxqip8grmsz";
+    sha256 = "1kf0gcsrl5n25rjlvkh87aywmn28kbwvakm5c7j1qpr4j01y34za";
     this = self.postgresql_13;
     thisAttr = "postgresql_13";
     inherit self;
   };
 
   postgresql_14 = self.callPackage generic {
-    version = "14beta1";
+    version = "14.0";
     psqlSchema = "14";
-    sha256 = "0lih2iykychhvis3mxqyp087m1hld3lyi48n3qwd2js44prxv464";
+    sha256 = "08m14zcrcvc2i0xl10p0wgzycsmfmk27gny40a8mwdx74s8xfapf";
     this = self.postgresql_14;
     thisAttr = "postgresql_14";
     inherit self;

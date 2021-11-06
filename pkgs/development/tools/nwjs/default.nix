@@ -47,8 +47,6 @@ in stdenv.mkDerivation rec {
       "0nlpdz76k1p1pq4xygfr2an91m0d7p5fjyg2xhiggyy8b7sp4964";
   };
 
-  phases = [ "unpackPhase" "installPhase" ];
-
   # we have runtime deps like sqlite3 that should remain
   dontPatchELF = true;
 
@@ -81,6 +79,9 @@ in stdenv.mkDerivation rec {
 
       mkdir -p $out/bin
       ln -s $out/share/nwjs/nw $out/bin
+
+      mkdir $out/lib
+      ln -s $out/share/nwjs/lib/libnw.so $out/lib/libnw.so
   '';
 
   nativeBuildInputs = [ makeWrapper ];

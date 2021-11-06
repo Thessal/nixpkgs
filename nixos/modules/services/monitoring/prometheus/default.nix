@@ -7,10 +7,34 @@ let
 
   workingDir = "/var/lib/" + cfg.stateDir;
 
+  prometheusYmlOut = "${workingDir}/prometheus-substituted.yaml";
+
+  writeConfig = pkgs.writeShellScriptBin "write-prometheus-config" ''
+    PATH="${makeBinPath (with pkgs; [ coreutils envsubst ])}"
+    touch '${prometheusYmlOut}'
+    chmod 600 '${prometheusYmlOut}'
+    envsubst -o '${prometheusYmlOut}' -i '${prometheusYml}'
+  '';
+
+  triggerReload = pkgs.writeShellScriptBin "trigger-reload-prometheus" ''
+    PATH="${makeBinPath (with pkgs; [ systemd ])}"
+    if systemctl -q is-active prometheus.service; then
+      systemctl reload prometheus.service
+    fi
+  '';
+
+  reload = pkgs.writeShellScriptBin "reload-prometheus" ''
+    PATH="${makeBinPath (with pkgs; [ systemd coreutils gnugrep ])}"
+    cursor=$(journalctl --show-cursor -n0 | grep -oP "cursor: \K.*")
+    kill -HUP $MAINPID
+    journalctl -u prometheus.service --after-cursor="$cursor" -f \
+      | grep -m 1 "Completed loading of configuration file" > /dev/null
+  '';
+
   # a wrapper that verifies that the configuration is valid
   promtoolCheck = what: name: file:
     if cfg.checkConfig then
-      pkgs.runCommandNoCCLocal
+      pkgs.runCommandLocal
         "${name}-${replaceStrings [" "] [""] what}-checked"
         { buildInputs = [ cfg.package ]; } ''
       ln -s ${file} $out
@@ -19,7 +43,7 @@ let
 
   # Pretty-print JSON to a file
   writePrettyJSON = name: x:
-    pkgs.runCommandNoCCLocal name {} ''
+    pkgs.runCommandLocal name {} ''
       echo '${builtins.toJSON x}' | ${pkgs.jq}/bin/jq . > $out
     '';
 
@@ -47,7 +71,11 @@ let
 
   cmdlineArgs = cfg.extraFlags ++ [
     "--storage.tsdb.path=${workingDir}/data/"
-    "--config.file=/run/prometheus/prometheus-substituted.yaml"
+    "--config.file=${
+      if cfg.enableReload
+      then prometheusYmlOut
+      else "/run/prometheus/prometheus-substituted.yaml"
+    }"
     "--web.listen-address=${cfg.listenAddress}:${builtins.toString cfg.port}"
     "--alertmanager.notification-queue-capacity=${toString cfg.alertmanagerNotificationQueueCapacity}"
     "--alertmanager.timeout=${toString cfg.alertmanagerTimeout}s"
@@ -323,15 +351,13 @@ let
               HTTP username
             '';
           };
-          password = mkOption {
-            type = types.str;
-            description = ''
-              HTTP password
-            '';
-          };
+          password = mkOpt types.str "HTTP password";
+          password_file = mkOpt types.str "HTTP password file";
         };
       }) ''
-        Optional http login credentials for metrics scraping.
+        Sets the `Authorization` header on every scrape request with the
+        configured username and password.
+        password and password_file are mutually exclusive.
       '';
 
       bearer_token = mkOpt types.str ''
@@ -694,7 +720,7 @@ in {
     package = mkOption {
       type = types.package;
       default = pkgs.prometheus;
-      defaultText = "pkgs.prometheus";
+      defaultText = literalExpression "pkgs.prometheus";
       description = ''
         The prometheus package that should be used.
       '';
@@ -730,6 +756,25 @@ in {
       default = [];
       description = ''
         Extra commandline options when launching Prometheus.
+      '';
+    };
+
+    enableReload = mkOption {
+      default = false;
+      type = types.bool;
+      description = ''
+        Reload prometheus when configuration file changes (instead of restart).
+
+        The following property holds: switching to a configuration
+        (<literal>switch-to-configuration</literal>) that changes the prometheus
+        configuration only finishes successully when prometheus has finished
+        loading the new configuration.
+
+        Note that prometheus will also get reloaded when the location of the
+        <option>environmentFile</option> changes but not when its contents
+        changes. So when you change it contents make sure to reload prometheus
+        manually or include the hash of <option>environmentFile</option> in its
+        name.
       '';
     };
 
@@ -835,7 +880,7 @@ in {
 
     alertmanagers = mkOption {
       type = types.listOf types.attrs;
-      example = literalExample ''
+      example = literalExpression ''
         [ {
           scheme = "https";
           path_prefix = "/alertmanager";
@@ -930,7 +975,7 @@ in {
     systemd.services.prometheus = {
       wantedBy = [ "multi-user.target" ];
       after    = [ "network.target" ];
-      preStart = ''
+      preStart = mkIf (!cfg.enableReload) ''
          ${lib.getBin pkgs.envsubst}/bin/envsubst -o "/run/prometheus/prometheus-substituted.yaml" \
                                                   -i "${prometheusYml}"
       '';
@@ -938,13 +983,58 @@ in {
         ExecStart = "${cfg.package}/bin/prometheus" +
           optionalString (length cmdlineArgs != 0) (" \\\n  " +
             concatStringsSep " \\\n  " cmdlineArgs);
+        ExecReload = mkIf cfg.enableReload "+${reload}/bin/reload-prometheus";
         User = "prometheus";
         Restart  = "always";
-        EnvironmentFile = mkIf (cfg.environmentFile != null) [ cfg.environmentFile ];
+        EnvironmentFile = mkIf (cfg.environmentFile != null && !cfg.enableReload) [ cfg.environmentFile ];
         RuntimeDirectory = "prometheus";
         RuntimeDirectoryMode = "0700";
         WorkingDirectory = workingDir;
         StateDirectory = cfg.stateDir;
+        StateDirectoryMode = "0700";
+      };
+    };
+    systemd.services.prometheus-config-write = mkIf cfg.enableReload {
+      wantedBy = [ "prometheus.service" ];
+      before = [ "prometheus.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = "prometheus";
+        StateDirectory = cfg.stateDir;
+        StateDirectoryMode = "0700";
+        EnvironmentFile = mkIf (cfg.environmentFile != null) [ cfg.environmentFile ];
+        ExecStart = "${writeConfig}/bin/write-prometheus-config";
+      };
+    };
+    # prometheus-config-reload will activate after prometheus. However, what we
+    # don't want is that on startup it immediately reloads prometheus because
+    # prometheus itself might have just started.
+    #
+    # Instead we only want to reload prometheus when the config file has
+    # changed. So on startup prometheus-config-reload will just output a
+    # harmless message and then stay active (RemainAfterExit).
+    #
+    # Then, when the config file has changed, switch-to-configuration notices
+    # that this service has changed and needs to be reloaded
+    # (reloadIfChanged). The reload command then actually writes the new config
+    # and reloads prometheus.
+    systemd.services.prometheus-config-reload = mkIf cfg.enableReload {
+      wantedBy = [ "prometheus.service" ];
+      after = [ "prometheus.service" ];
+      reloadIfChanged = true;
+      serviceConfig = {
+        Type = "oneshot";
+        User = "prometheus";
+        StateDirectory = cfg.stateDir;
+        StateDirectoryMode = "0700";
+        EnvironmentFile = mkIf (cfg.environmentFile != null) [ cfg.environmentFile ];
+        RemainAfterExit = true;
+        TimeoutSec = 60;
+        ExecStart = "${pkgs.logger}/bin/logger 'prometheus-config-reload will only reload prometheus when reloaded itself.'";
+        ExecReload = [
+          "${writeConfig}/bin/write-prometheus-config"
+          "+${triggerReload}/bin/trigger-reload-prometheus"
+        ];
       };
     };
   };

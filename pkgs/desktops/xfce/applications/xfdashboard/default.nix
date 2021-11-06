@@ -4,7 +4,7 @@
 , libXinerama
 , libXdamage
 , libX11
-, libwnck3
+, libwnck
 , libxfce4ui
 , libxfce4util
 , garcon
@@ -17,11 +17,11 @@
 mkXfceDerivation {
   category = "apps";
   pname = "xfdashboard";
-  version = "0.9.2";
+  version = "0.9.5";
   rev-prefix = "";
   odd-unstable = false;
 
-  sha256 = "sha256-Q6r9FoPl+vvqZWP5paAjT3VX3M/6TvqzrrGKPCH8+xo=";
+  sha256 = "sha256-nb1zY78MUjEOJF59MYIOY1rxo3JFmzH9yTJVUGsOwOA=";
 
   buildInputs = [
     clutter
@@ -33,7 +33,7 @@ mkXfceDerivation {
     libXcomposite
     libXdamage
     libXinerama
-    libwnck3
+    libwnck
     libxfce4ui
     libxfce4util
     xfconf

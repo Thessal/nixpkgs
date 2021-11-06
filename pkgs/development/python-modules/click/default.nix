@@ -1,12 +1,19 @@
-{ lib, buildPythonPackage, fetchPypi, locale, pytestCheckHook }:
+{ lib
+, buildPythonPackage
+, pythonOlder
+, fetchPypi
+, importlib-metadata
+, locale
+, pytestCheckHook
+}:
 
 buildPythonPackage rec {
   pname = "click";
-  version = "7.1.2";
+  version = "8.0.2";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a";
+    sha256 = "7027bc7bbafaab8b2c2816861d8eb372429ee3c02e193fc2f93d6c4ab9de49c5";
   };
 
   postPatch = ''
@@ -14,7 +21,13 @@ buildPythonPackage rec {
       --replace "'locale'" "'${locale}/bin/locale'"
   '';
 
-  checkInputs = [ pytestCheckHook ];
+  propagatedBuildInputs = lib.optionals (pythonOlder "3.8") [
+    importlib-metadata
+  ];
+
+  checkInputs = [
+    pytestCheckHook
+  ];
 
   meta = with lib; {
     homepage = "https://click.palletsprojects.com/";

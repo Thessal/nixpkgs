@@ -3,7 +3,7 @@
 , fetchPypi
 , coverage
 , ipykernel
-, jupyter_client
+, jupyter-client
 , nbformat
 , pytestCheckHook
 , pytest
@@ -11,7 +11,7 @@
 , glibcLocales
 , matplotlib
 , sympy
-, pytestcov
+, pytest-cov
 }:
 
 buildPythonPackage rec {
@@ -27,7 +27,7 @@ buildPythonPackage rec {
     pytestCheckHook
     matplotlib
     sympy
-    pytestcov
+    pytest-cov
   ];
 
   buildInputs = [ glibcLocales ];
@@ -35,7 +35,7 @@ buildPythonPackage rec {
   propagatedBuildInputs = [
     coverage
     ipykernel
-    jupyter_client
+    jupyter-client
     nbformat
     pytest
     six

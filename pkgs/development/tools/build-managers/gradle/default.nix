@@ -9,8 +9,9 @@ let
       url = "https://services.gradle.org/distributions/${name}-bin.zip";
     };
   };
-in rec {
-  gradleGen = {name, src, nativeVersion} : stdenv.mkDerivation {
+in
+rec {
+  gradleGen = { name, src, nativeVersion }: stdenv.mkDerivation {
     inherit name src nativeVersion;
 
     dontBuild = true;
@@ -27,20 +28,21 @@ in rec {
     '';
 
     fixupPhase = if (!stdenv.isLinux) then ":" else
-      let arch = if stdenv.is64bit then "amd64" else "i386"; in ''
-        mkdir patching
-        pushd patching
-        jar xf $out/lib/gradle/lib/native-platform-linux-${arch}-${nativeVersion}.jar
-        patchelf --set-rpath "${stdenv.cc.cc.lib}/lib:${stdenv.cc.cc.lib}/lib64" net/rubygrapefruit/platform/linux-${arch}/libnative-platform.so
-        jar cf native-platform-linux-${arch}-${nativeVersion}.jar .
-        mv native-platform-linux-${arch}-${nativeVersion}.jar $out/lib/gradle/lib/
-        popd
+    let arch = if stdenv.is64bit then "amd64" else "i386"; in
+    ''
+      mkdir patching
+      pushd patching
+      jar xf $out/lib/gradle/lib/native-platform-linux-${arch}-${nativeVersion}.jar
+      patchelf --set-rpath "${stdenv.cc.cc.lib}/lib:${stdenv.cc.cc.lib}/lib64" net/rubygrapefruit/platform/linux-${arch}/libnative-platform.so
+      jar cf native-platform-linux-${arch}-${nativeVersion}.jar .
+      mv native-platform-linux-${arch}-${nativeVersion}.jar $out/lib/gradle/lib/
+      popd
 
-        # The scanner doesn't pick up the runtime dependency in the jar.
-        # Manually add a reference where it will be found.
-        mkdir $out/nix-support
-        echo ${stdenv.cc.cc} > $out/nix-support/manual-runtime-dependencies
-      '';
+      # The scanner doesn't pick up the runtime dependency in the jar.
+      # Manually add a reference where it will be found.
+      mkdir $out/nix-support
+      echo ${stdenv.cc.cc} > $out/nix-support/manual-runtime-dependencies
+    '';
 
     nativeBuildInputs = [ makeWrapper unzip ];
     buildInputs = [ java ];
@@ -63,24 +65,21 @@ in rec {
 
   gradle_latest = gradle_7;
 
-  gradle_7 = gradleGen (gradleSpec {
-    version = "7.0";
-    nativeVersion = "0.22-milestone-11";
-    sha256 = "01f3bjn8pbpni8kmxvx1dpwpf4zz04vj7cpm6025n0k188c8k2zb";
-  });
+  # NOTE: 7.3 is a candidate.
+  gradle_7 = gradle_7_2;
 
-  gradle_6_8 = gradleGen (gradleSpec {
-    version = "6.8.3";
-    nativeVersion = "0.22-milestone-9";
-    sha256 = "01fjrk5nfdp6mldyblfmnkq2gv1rz1818kzgr0k2i1wzfsc73akz";
-  });
+  gradle_7_3 = gradleGen (gradleSpec (import ./gradle-7.3-rc-3-spec.nix));
+  gradle_7_2 = gradleGen (gradleSpec (import ./gradle-7.2-spec.nix));
+  gradle_6_9 = gradleGen (gradleSpec (import ./gradle-6.9.1-spec.nix));
 
+  # NOTE: No GitHub Release for this release, so update.sh does not work.
   gradle_5_6 = gradleGen (gradleSpec {
     version = "5.6.4";
     nativeVersion = "0.18";
-    sha256 = "1f3067073041bc44554d0efe5d402a33bc3d3c93cc39ab684f308586d732a80d";
+    sha256 = "03d86bbqd19h9xlanffcjcy3vg1k5905vzhf9mal9g21603nfc0z";
   });
 
+  # NOTE: No GitHub Release for this release, so update.sh does not work.
   gradle_4_10 = gradleGen (gradleSpec {
     version = "4.10.3";
     nativeVersion = "0.14";

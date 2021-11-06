@@ -208,6 +208,8 @@ stdenv.mkDerivation {
       else if targetPlatform.isAlpha then "alpha"
       else if targetPlatform.isVc4 then "vc4"
       else if targetPlatform.isOr1k then "or1k"
+      else if targetPlatform.isM68k then "m68k"
+      else if targetPlatform.isS390 then "s390"
       else if targetPlatform.isRiscV then "lriscv"
       else throw "unknown emulation for platform: ${targetPlatform.config}";
     in if targetPlatform.useLLVM or false then ""
@@ -322,10 +324,20 @@ stdenv.mkDerivation {
       echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/libc-ldflags
     ''
 
+    ##
+    ## GNU specific extra strip flags
+    ##
+
+    # TODO(@sternenseemann): make a generic strip wrapper?
+    + optionalString (bintools.isGNU or false) ''
+      wrap ${targetPrefix}strip ${./gnu-binutils-strip-wrapper.sh} \
+        "${bintools_bin}/bin/${targetPrefix}strip"
+    ''
+
     ###
     ### Remove LC_UUID
     ###
-    + optionalString (stdenv.targetPlatform.isDarwin && !(stdenv.cc.bintools.bintools.isGNU or false)) ''
+    + optionalString (stdenv.targetPlatform.isDarwin && !(bintools.isGNU or false)) ''
       echo "-no_uuid" >> $out/nix-support/libc-ldflags-before
     ''
 

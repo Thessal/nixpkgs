@@ -24,6 +24,8 @@ stdenv.mkDerivation rec {
     -H:Name=${pname} \
     -H:EnableURLProtocols=https,http \
     -H:+ReportExceptionStackTraces \
+    -H:CLibraryPath=${graalvm11-ce.lib}/lib \
+    ${lib.optionalString stdenv.isDarwin ''-H:-CheckToolchain''} \
     --report-unsupported-elements-at-runtime \
     --initialize-at-build-time \
     --no-fallback

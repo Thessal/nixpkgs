@@ -6,14 +6,14 @@
 
 buildPythonPackage rec {
   pname = "coqpit";
-  version = "0.0.6.6";
+  version = "0.0.14";
   format = "setuptools";
 
   src = fetchFromGitHub {
     owner = "coqui-ai";
     repo = pname;
     rev = "v${version}";
-    sha256 = "0wb5wf84i5h4ycm732kn4316v7schhm91s2rrklfw9sny5dqmdnh";
+    sha256 = "041sx7ph8vfx8ivvm6hjj6s83p9lni2agwyrrncqwhcbjy9pbdf1";
   };
 
   checkInputs = [
@@ -32,6 +32,6 @@ buildPythonPackage rec {
     '';
     homepage = "https://github.com/coqui-ai/coqpit";
     license = licenses.mit;
-    maintainers = with maintainers; [ hexa mic92 ];
+    maintainers = teams.tts.members;
   };
 }

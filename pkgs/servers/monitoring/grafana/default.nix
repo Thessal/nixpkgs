@@ -1,33 +1,24 @@
-{ lib, buildGoModule, fetchurl, fetchFromGitHub, nixosTests, fetchpatch }:
+{ lib, buildGoModule, fetchurl, fetchFromGitHub, nixosTests, tzdata }:
 
 buildGoModule rec {
   pname = "grafana";
-  version = "8.0.2";
+  version = "8.1.6";
 
-  excludedPackages = [ "release_publisher" ];
+  excludedPackages = "\\(alert_webhook_listener\\|clean-swagger\\|release_publisher\\|slow_proxy\\|slow_proxy_mac\\|macaron\\)";
 
   src = fetchFromGitHub {
     rev = "v${version}";
     owner = "grafana";
     repo = "grafana";
-    sha256 = "sha256-kCsrLZ0EbuMwqqDvUvhm8+B/vh6FpeJ5zkwste+qwyQ=";
+    sha256 = "sha256-PUVRFa3b+O2lY6q3vO+rLUcC+fx80iB78tt60f6Vugk=";
   };
 
   srcStatic = fetchurl {
     url = "https://dl.grafana.com/oss/release/grafana-${version}.linux-amd64.tar.gz";
-    sha256 = "sha256-QBMGLN3MjYJcv2vbs9GHfrCixcV7nH+Ox3o6/YtRYak=";
+    sha256 = "sha256-So9xzet9kPkjcDwNts3iXlCd+u2uiXTo0LVcLc8toyk=";
   };
 
-  vendorSha256 = "sha256-x7sSVIim/TOhMTbnRK/fpgxiSRSO8KwGILTE2i1gU3U=";
-
-  patches = [
-    # https://github.com/grafana/grafana/pull/35635 (fixes declarative plugins for us)
-    (fetchpatch {
-      url = "https://github.com/grafana/grafana/commit/5b5cb948092bdb85e0378fd9ae01b564c4bf65f1.patch";
-      sha256 = "sha256-MnCjfLiHsBSWPcxVZ2dC4q8x1/TjzR8uyQhH2Jzgx7o=";
-      includes = [ "pkg/util/filepath.go" ];
-    })
-  ];
+  vendorSha256 = "sha256-dn4sliRp58oZALZ8Iu7kE83ntkcMIU84Xr5WoeXlhCI=";
 
   preBuild = ''
     # The testcase makes an API call against grafana.com:
@@ -52,8 +43,18 @@ buildGoModule rec {
     rm -r scripts/go
   '';
 
-  buildFlagsArray = ''
-    -ldflags=-s -w -X main.version=${version}
+  ldflags = [
+    "-s" "-w" "-X main.version=${version}"
+  ];
+
+  # Tests start http servers which need to bind to local addresses:
+  # panic: httptest: failed to listen on a port: listen tcp6 [::1]:0: bind: operation not permitted
+  __darwinAllowLocalNetworking = true;
+
+  # On Darwin, files under /usr/share/zoneinfo exist, but fail to open in sandbox:
+  # TestValueAsTimezone: date_formats_test.go:33: Invalid has err for input "Europe/Amsterdam": operation not permitted
+  preCheck = ''
+    export ZONEINFO=${tzdata}/share/zoneinfo
   '';
 
   postInstall = ''
@@ -69,6 +70,7 @@ buildGoModule rec {
     license = licenses.agpl3;
     homepage = "https://grafana.com";
     maintainers = with maintainers; [ offline fpletz willibutz globin ma27 Frostman ];
-    platforms = platforms.linux;
+    platforms = platforms.linux ++ platforms.darwin;
+    mainProgram = "grafana-server";
   };
 }

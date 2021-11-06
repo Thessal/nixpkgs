@@ -4,12 +4,19 @@
 
 with python3.pkgs; buildPythonPackage rec {
   pname = "esphome-dashboard";
-  version = "20210615.0";
+  version = "20211021.0";
 
   src = fetchPypi {
     inherit pname version;
-    sha256 = "07ammr46bipfi4b7nnjkip5l7966wxqhp5n3g2wqf68m3ymx24s9";
+    sha256 = "sha256-stJ6fUs02XpCN671EztHTLkXd57eMo6472Q1e1/cbHY=";
   };
+
+  # no tests
+  doCheck = false;
+
+  pythonImportsCheck = [
+    "esphome_dashboard"
+  ];
 
   meta = with lib; {
     description = "ESPHome dashboard";

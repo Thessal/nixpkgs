@@ -7,13 +7,13 @@
 
 buildPythonPackage rec {
   pname = "hatasmota";
-  version = "0.2.14";
+  version = "0.2.21";
 
   src = fetchFromGitHub {
     owner = "emontnemery";
     repo = pname;
     rev = version;
-    sha256 = "sha256-sCGUlEN1ejWhc2+9JRQ7UPqueq30u8gGSPRxbs4cnLE=";
+    sha256 = "sha256-mtn/r6pvHeGMLkvUP4w6CT+2+viLna4Vvn9RFMEmqts=";
   };
 
   propagatedBuildInputs = [
@@ -23,6 +23,7 @@ buildPythonPackage rec {
 
   # Project has no tests
   doCheck = false;
+
   pythonImportsCheck = [ "hatasmota" ];
 
   meta = with lib; {

@@ -1,34 +1,37 @@
 { lib
-, buildPythonPackage
-, pythonOlder
-, fetchFromGitHub
 , aiohttp
+, buildPythonPackage
+, fetchFromGitHub
+, freezegun
 , oauthlib
+, pytest-asyncio
+, pytest-mock
+, pytestCheckHook
+, pythonOlder
 , requests
 , requests_oauthlib
-, freezegun
-, pytest-asyncio
-, pytestCheckHook
 , requests-mock
+, setuptools-scm
 }:
 
 buildPythonPackage rec {
   pname = "pyatmo";
-  version = "5.0.1";
-  disabled = pythonOlder "3.7";
+  version = "6.1.0";
+
+  disabled = pythonOlder "3.8";
 
   src = fetchFromGitHub {
     owner = "jabesq";
     repo = "pyatmo";
     rev = "v${version}";
-    sha256 = "0can9v602iqfn0l01fd7gr63qzvcngfm0qka4s1x0pldh6avxmfh";
+    sha256 = "sha256-Iscnv3hfYa8QFiXMUN334Muo0oGqnnK11RPNxQJggG0=";
   };
 
-  postPatch = ''
-    substituteInPlace setup.cfg \
-      --replace "oauthlib~=3.1" "oauthlib" \
-      --replace "requests~=2.24" "requests"
-  '';
+  SETUPTOOLS_SCM_PRETEND_VERSION = version;
+
+  nativeBuildInputs = [
+    setuptools-scm
+  ];
 
   propagatedBuildInputs = [
     aiohttp
@@ -40,16 +43,23 @@ buildPythonPackage rec {
   checkInputs = [
     freezegun
     pytest-asyncio
+    pytest-mock
     pytestCheckHook
     requests-mock
   ];
+
+  postPatch = ''
+    substituteInPlace setup.cfg \
+      --replace "oauthlib~=3.1" "oauthlib" \
+      --replace "requests~=2.24" "requests"
+  '';
 
   pythonImportsCheck = [ "pyatmo" ];
 
   meta = with lib; {
     description = "Simple API to access Netatmo weather station data";
+    homepage = "https://github.com/jabesq/pyatmo";
     license = licenses.mit;
-    homepage = "https://github.com/jabesq/netatmo-api-python";
     maintainers = with maintainers; [ delroth ];
   };
 }

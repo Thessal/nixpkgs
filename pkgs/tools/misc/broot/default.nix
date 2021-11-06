@@ -14,14 +14,14 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "broot";
-  version = "1.6.0";
+  version = "1.6.6";
 
   src = fetchCrate {
     inherit pname version;
-    sha256 = "sha256-H/QT/fmQI9sHjl6wMJjrfjvbOhY9VyBkAGetvcUqGrE=";
+    sha256 = "sha256-Aezi005CKhGwCRZ2HwxFRRORBvVoZEzljTcKQZ8b8XI=";
   };
 
-  cargoHash = "sha256-5mqLVbB/dLAk3Ck7ilHhVn0CB/6Ln82SaTxZ/vkx+9k=";
+  cargoHash = "sha256-d06lvS5ajXPY/AwmE2rkya82mAOeEv04EtBElDvX2+I=";
 
   nativeBuildInputs = [
     installShellFiles
@@ -75,7 +75,7 @@ rustPlatform.buildRustPackage rec {
   meta = with lib; {
     description = "An interactive tree view, a fuzzy search, a balanced BFS descent and customizable commands";
     homepage = "https://dystroy.org/broot/";
-    maintainers = with maintainers; [ danieldk ];
+    maintainers = with maintainers; [ dywedir ];
     license = with licenses; [ mit ];
   };
 }

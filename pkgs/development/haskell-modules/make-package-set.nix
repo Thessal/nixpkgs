@@ -205,7 +205,7 @@ in package-set { inherit pkgs lib callPackage; } self // {
     callCabal2nixWithOptions = name: src: extraCabal2nixOptions: args:
       let
         filter = path: type:
-                   pkgs.lib.hasSuffix "${name}.cabal" path ||
+                   pkgs.lib.hasSuffix ".cabal" path ||
                    baseNameOf path == "package.yaml";
         expr = self.haskellSrc2nix {
           inherit name extraCabal2nixOptions;
@@ -348,7 +348,7 @@ in package-set { inherit pkgs lib callPackage; } self // {
         #       );
         #     });
         #   in
-        #   hpkgs.shellFor {
+        #   haskellPkgs.shellFor {
         #     packages = p: [ p.foo ];
         #     genericBuilderArgsModifier = args: args // { doCheck = true; doBenchmark = true };
         #   }

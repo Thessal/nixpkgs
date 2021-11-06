@@ -55,13 +55,13 @@ let
   ];
 in stdenv.mkDerivation rec {
   pname = "glusterfs";
-  version = "9.2";
+  version = "9.4";
 
   src = fetchFromGitHub {
     owner = "gluster";
     repo = pname;
     rev = "v${version}";
-    sha256 = "00y2xs7nj4d59x4fp6gq7qql3scykq9lppdvx7y3xbgfmkrwixx9";
+    sha256 = "0ybs0dm7jskmfnmbg5fj8wi2aapbrwn4gbrx8ix6d8dzcl3pv78k";
   };
   inherit buildInputs propagatedBuildInputs;
 
@@ -88,11 +88,11 @@ in stdenv.mkDerivation rec {
     echo "v${version}" > VERSION
     ./autogen.sh
     export PYTHON=${python3}/bin/python
-    '';
+  '';
 
   configureFlags = [
     "--localstatedir=/var"
-    ];
+  ];
 
   nativeBuildInputs = [ rpcsvc-proto ];
 
@@ -179,7 +179,7 @@ in stdenv.mkDerivation rec {
 
     # this gets falsely loaded as module by glusterfind
     rm -r $out/bin/conf.py
-    '';
+  '';
 
   meta = with lib; {
     description = "Distributed storage system";

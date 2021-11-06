@@ -38,6 +38,8 @@ let
       mixRelease = callPackage ./mix-release.nix { };
 
       erlang-ls = callPackage ./erlang-ls { };
+      erlfmt = callPackage ./erlfmt { };
+      elvis-erlang = callPackage ./elvis-erlang { };
 
       # BEAM-based languages.
       elixir = elixir_1_12;
@@ -74,7 +76,7 @@ let
         debugInfo = true;
       };
 
-      elixir_ls = callPackage ./elixir_ls.nix { inherit elixir fetchMixDeps mixRelease; };
+      elixir_ls = callPackage ./elixir-ls { inherit elixir fetchMixDeps mixRelease; };
 
       lfe = lfe_1_3;
       lfe_1_3 = lib'.callLFE ../interpreters/lfe/1.3.nix { inherit erlang buildRebar3 buildHex; };

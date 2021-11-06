@@ -8,7 +8,7 @@
 , pproxy
 , pytest-asyncio
 , pytestCheckHook
-, pytestcov
+, pytest-cov
 , sniffio
 , trio
 , trustme
@@ -17,14 +17,14 @@
 
 buildPythonPackage rec {
   pname = "httpcore";
-  version = "0.13.6";
+  version = "0.13.7";
   disabled = pythonOlder "3.6";
 
   src = fetchFromGitHub {
     owner = "encode";
     repo = pname;
     rev = version;
-    sha256 = "sha256-7G7jchOQTgcFSGZfoMPFm0NY9ofg5MM5Xn5lV+W9w8k=";
+    sha256 = "sha256-9hG9MqqEYMT2j7tXafToGYwHbJfp9/klNqZozHSbweE=";
   };
 
   propagatedBuildInputs = [
@@ -38,17 +38,11 @@ buildPythonPackage rec {
     pproxy
     pytest-asyncio
     pytestCheckHook
-    pytestcov
+    pytest-cov
     trio
     trustme
     uvicorn
   ];
-
-  postPatch = ''
-    # The anyio 3.1.0 release is not picked-up proberly
-    substituteInPlace setup.py --replace "anyio==3.*" "anyio"
-  '';
-
 
   disabledTestPaths = [
     # these tests fail during dns lookups: httpcore.ConnectError: [Errno -2] Name or service not known

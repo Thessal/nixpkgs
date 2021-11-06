@@ -91,12 +91,11 @@ in {
       type = with types; listOf package;
       default = with pkgs; [
         swaylock swayidle alacritty dmenu
-        rxvt-unicode # For backward compatibility (old default terminal)
       ];
-      defaultText = literalExample ''
-        with pkgs; [ swaylock swayidle rxvt-unicode alacritty dmenu ];
+      defaultText = literalExpression ''
+        with pkgs; [ swaylock swayidle alacritty dmenu ];
       '';
-      example = literalExample ''
+      example = literalExpression ''
         with pkgs; [
           i3status i3status-rust
           termite rofi light

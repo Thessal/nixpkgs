@@ -51,7 +51,11 @@ with pkgs;
 
   cuda = callPackage ./cuda { };
 
-  trivial = callPackage ../build-support/trivial-builders/test.nix {};
+  trivial-builders = recurseIntoAttrs {
+    writeStringReferencesToFile = callPackage ../build-support/trivial-builders/test/writeStringReferencesToFile.nix {};
+    references = callPackage ../build-support/trivial-builders/test/references.nix {};
+    overriding = callPackage ../build-support/trivial-builders/test-overriding.nix {};
+  };
 
   writers = callPackage ../build-support/writers/test.nix {};
 }

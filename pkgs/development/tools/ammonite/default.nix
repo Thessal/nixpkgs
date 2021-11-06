@@ -1,4 +1,4 @@
-{ lib, stdenv, fetchurl, jre, nixosTests, writeScript, common-updater-scripts
+{ lib, stdenv, fetchurl, jre, writeScript, common-updater-scripts
 , git, nixfmt, nix, coreutils, gnused, disableRemoteLogging ? true }:
 
 with lib;
@@ -17,7 +17,7 @@ let
         inherit sha256;
       };
 
-      phases = "installPhase";
+      dontUnpack = true;
 
       installPhase = ''
         install -Dm755 $src $out/bin/amm
@@ -28,7 +28,6 @@ let
       '';
 
       passthru = {
-        tests = { inherit (nixosTests) ammonite; };
 
         updateScript = writeScript "update.sh" ''
           #!${stdenv.shell}
@@ -58,6 +57,15 @@ let
         '';
       };
 
+      doInstallCheck = true;
+      installCheckPhase = ''
+        runHook preInstallCheck
+
+        $out/bin/amm -c 'val foo = 21; println(foo * 2)' | grep 42
+
+        runHook postInstallCheck
+      '';
+
       meta = {
         description = "Improved Scala REPL";
         longDescription = ''
@@ -66,7 +74,7 @@ let
           with a lot of ergonomic improvements and configurability
           that may be familiar to people coming from IDEs or other REPLs such as IPython or Zsh.
         '';
-        homepage = "http://www.lihaoyi.com/Ammonite/";
+        homepage = "https://www.lihaoyi.com/Ammonite/";
         license = licenses.mit;
         platforms = platforms.all;
         maintainers = [ maintainers.nequissimus ];
